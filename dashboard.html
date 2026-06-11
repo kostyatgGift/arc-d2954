@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dash-balance {
+            background: linear-gradient(135deg, rgba(124, 108, 240, 0.15), rgba(90, 75, 216, 0.1));
+            border: 1px solid rgba(124, 108, 240, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .dash-balance .amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .dash-balance .label {
+            font-size: 13px;
+            color: #8884a0;
+            margin-top: 4px;
+        }
+
+        .dash-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: #c8c4d8;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(124, 108, 240, 0.3);
+        }
+
+        .action-btn .icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #5a5670;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <div class="auth-box">
+            <div class="dash-header">
+                <div class="user-info">
+                    <div class="avatar" id="dashAvatar">U</div>
+                    <div>
+                        <div class="user-name" id="dashName">User</div>
+                        <div class="user-status" id="dashStatus">Активен</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Выйти</button>
+            </div>
+
+            <div class="dash-balance">
+                <div class="amount" id="dashBalance">0 ₽</div>
+                <div class="label" id="balanceLabel">Баланс</div>
+            </div>
+
+            <div class="dash-actions">
+                <button class="action-btn" onclick="alert('\u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 \u042eMoney / \u041a\u043e\u0448\u0435\u043b\u0435\u043a / Azovsk')">
+                    <div class="icon">ð°</div>
+                    <div>Пополнить</div>
+                </button>
+                <button class="action-btn" onclick="alert('\u0418\u0441\u0442\u043e\u0440\u0438\u044f \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439')">
+                    <div class="icon">ð</div>
+                    <div>История</div>
+                </button>
+                <button class="action-btn" onclick="alert('\u041f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0430: @support')">
+                    <div class="icon">ð</div>
+                    <div>Поддержка</div>
+                </button>
+                <button class="action-btn" onclick="alert('\u0420\u0435\u0444\u0435\u0440\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u0441\u044b\u043b\u043a\u0430')">
+                    <div class="icon">ð</div>
+                    <div>Реферал</div>
+                </button>
+            </div>
+
+            <div class="section-title" id="productsTitle">Товары</div>
+            <div class="product-list" id="productList">
+                <div class="empty-state">
+                    <div class="icon">ð</div>
+                    <div>Нет доступных товаров</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!user.email) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('dashName').textContent = user.name || user.email.split('@')[0];
+            document.getElementById('dashAvatar').textContent = (user.name || user.email)[0].toUpperCase();
+            
+            const balance = user.balance || 0;
+            document.getElementById('dashBalance').textContent = balance + ' ₽';
+            
+            const status = user.premium ? 'Премиум' : 'Активен';
+            document.getElementById('dashStatus').textContent = status;
+            document.getElementById('dashStatus').style.color = user.premium ? '#ffc832' : '#50c878';
+
+            // Load products
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const list = document.getElementById('productList');
+            
+            if (products.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="icon">🛐</div><div>Нет доступных товаров</div></div>';
+            } else {
+                list.innerHTML = products.map((p, i) => `
+                    <div class="product-card">
+                        <div class="product-info">
+                            <h3>${p.name}</h3>
+                            <p>${p.price} ₽</p>
+                        </div>
+                        <button class="buy-btn" ${balance < p.price ? 'disabled' : ''} onclick="buyProduct(${i})">
+                            ${balance < p.price ? 'Недостаточно' : 'Купить'}
+                        </button>
+                    </div>
+                `).join('');
+            }
+        });
+
+        function buyProduct(index) {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const product = products[index];
+            
+            if (!product || (user.balance || 0) < product.price) {
+                alert('Недостаточно средств');
+                return;
+            }
+
+            user.balance = (user.balance || 0) - product.price;
+            
+            // Add to purchases
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '{}');
+            if (!purchases[user.email]) purchases[user.email] = [];
+            purchases[user.email].push({
+                product: product.name,
+                date: new Date().toISOString(),
+                price: product.price
+            });
+            localStorage.setItem('purchases', JSON.stringify(purchases));
+            localStorage.setItem('currentUser', JSON.stringify(user));
+
+            // Update users list
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.email === user.email);
+            if (idx !== -1) {
+                users[idx].balance = user.balance;
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+
+            alert('Товар куплен: ' + product.name);
+            location.reload();
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

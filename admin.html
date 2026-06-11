@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-screen {
+            text-align: center;
+        }
+        .login-screen h1 {
+            margin-bottom: 8px;
+        }
+        .login-screen .subtitle {
+            margin-bottom: 28px;
+        }
+        .login-form {
+            max-width: 340px;
+            margin: 0 auto;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #9a8cf0;
+            text-align: center;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .admin-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .admin-stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+        }
+        .admin-stat-card .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .admin-stat-card .stat-label {
+            font-size: 11px;
+            color: #8884a0;
+            margin-top: 4px;
+        }
+        .inline-btn {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 2px;
+            color: #fff;
+        }
+        .inline-btn.green {
+            background: #50c878;
+        }
+        .inline-btn.red {
+            background: #e05050;
+        }
+        .inline-btn.blue {
+            background: #5a8bf0;
+        }
+        .inline-btn.orange {
+            background: #f0a030;
+        }
+        .admin-card textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #e0dce8;
+            font-size: 13px;
+            outline: none;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container admin-container">
+        <!-- Login Screen -->
+        <div class="auth-box" id="adminLoginScreen">
+            <div class="login-screen">
+                <h1>Админ-панель</h1>
+                <p class="subtitle">Введите логин и пароль</p>
+                <div class="login-form">
+                    <div class="input-group">
+                        <input type="text" id="adminLoginInput" placeholder="Логин" value="admin">
+                        <span class="input-icon">ð¤</span>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="adminPassInput" placeholder="Пароль">
+                        <span class="input-icon">ð</span>
+                    </div>
+                    <button class="primary-btn" onclick="adminLogin()">Войти</button>
+                    <div class="status-msg" id="adminLoginStatus"></div>
+                    <a href="index.html" class="back-link">← На главную</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="auth-box hidden" id="adminPanel">
+            <div class="admin-header">
+                <h1 style="margin:0;font-size:22px;">Админка</h1>
+                <button class="logout-btn" onclick="adminLogout()">Выйти</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchAdminTab('stats', this)">Статистика</button>
+                <button class="admin-tab" onclick="switchAdminTab('users', this)">Пользователи</button>
+                <button class="admin-tab" onclick="switchAdminTab('products', this)">Товары</button>
+                <button class="admin-tab" onclick="switchAdminTab('settings', this)">Настройки</button>
+            </div>
+
+            <!-- Stats Tab -->
+            <div class="admin-section active" id="tab-stats">
+                <div class="admin-stats-grid" id="statsGrid">
+                    <div class="admin-stat-card">
+                        <div class="stat-value" id="statUsers">0</div>
+                        <div class="stat-label">Пользователей</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-value" id="statPremium">0</div>
+                        <div class="stat-label">Премиум</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-value" id="statProducts">0</div>
+                        <div class="stat-label">Товаров</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-value" id="statPurchases">0</div>
+                        <div class="stat-label">Продаж</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="admin-section" id="tab-users">
+                <div class="admin-card">
+                    <h2>Все пользователи</h2>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Имя</th>
+                                    <th>Баланс</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h2>Выдача премиума</h2>
+                    <div class="admin-row">
+                        <input type="email" id="premiumEmail" placeholder="Email пользователя">
+                        <select id="premiumDays">
+                            <option value="7">7 дней</option>
+                            <option value="30" selected>30 дней</option>
+                            <option value="90">90 дней</option>
+                            <option value="365">1 год</option>
+                            <option value="9999">Навсегда</option>
+                        </select>
+                        <button class="success" onclick="givePremium()">Выдать</button>
+                    </div>
+                    <div class="status-msg" id="premiumStatus"></div>
+                </div>
+
+                <div class="admin-card">
+                    <h2>Пополнить баланс</h2>
+                    <div class="admin-row">
+                        <input type="email" id="balanceEmail" placeholder="Email пользователя">
+                        <input type="number" id="balanceAmount" placeholder="Сумма" value="1000" min="1">
+                        <button class="success" onclick="addBalance()">Начислить</button>
+                    </div>
+                    <div class="status-msg" id="balanceStatus"></div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div class="admin-section" id="tab-products">
+                <div class="admin-card">
+                    <h2>Создать товар</h2>
+                    <div class="admin-row">
+                        <input type="text" id="productName" placeholder="Название товара">
+                        <input type="number" id="productPrice" placeholder="Цена" value="100" min="1">
+                        <button onclick="addProduct()">Добавить</button>
+                    </div>
+                    <div class="status-msg" id="productStatus"></div>
+                </div>
+
+                <div class="admin-card">
+                    <h2>Список товаров</h2>
+                    <table class="admin-table" id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Цена</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="admin-section" id="tab-settings">
+                <div class="admin-card">
+                    <h2>Сменить пароль админки</h2>
+                    <div class="admin-row">
+                        <input type="password" id="oldAdminPass" placeholder="Старый пароль">
+                        <input type="password" id="newAdminPass" placeholder="Новый пароль">
+                        <button onclick="changeAdminPass()">Сменить</button>
+                    </div>
+                    <div class="status-msg" id="adminPassStatus"></div>
+                </div>
+
+                <div class="admin-card">
+                    <h2>Информация</h2>
+                    <p style="color:#8884a0;font-size:14px;line-height:1.6;">
+                        Все данные хранятся в localStorage браузера.<br>
+                        Для сброса всех данных используйте кнопку ниже.
+                    </p>
+                    <button class="primary-btn" style="margin-top:12px;background:linear-gradient(135deg,#e05050,#c03030);" onclick="if(confirm('Вы уверены?')){localStorage.clear();location.reload();}">
+                        Сбросить все данные
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const ADMIN_KEY = 'admin_pass';
+        let adminPassword = localStorage.getItem(ADMIN_KEY) || 'admin';
+
+        function adminLogin() {
+            const login = document.getElementById('adminLoginInput').value;
+            const pass = document.getElementById('adminPassInput').value;
+            const status = document.getElementById('adminLoginStatus');
+
+            if (login === 'admin' && pass === adminPassword) {
+                document.getElementById('adminLoginScreen').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                status.className = 'status-msg';
+                refreshAdminData();
+            } else {
+                status.textContent = 'Неверный логин или пароль';
+                status.className = 'status-msg show error';
+            }
+        }
+
+        function adminLogout() {
+            document.getElementById('adminLoginScreen').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('adminPassInput').value = '';
+        }
+
+        function switchAdminTab(tab, btn) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'stats') refreshAdminData();
+        }
+
+        function refreshAdminData() {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '{}');
+
+            const totalPurchases = Object.values(purchases).reduce((s, arr) => s + arr.length, 0);
+            const premiumCount = users.filter(u => u.premium).length;
+
+            document.getElementById('statUsers').textContent = users.length;
+            document.getElementById('statPremium').textContent = premiumCount;
+            document.getElementById('statProducts').textContent = products.length;
+            document.getElementById('statPurchases').textContent = totalPurchases;
+
+            renderUsersTable(users);
+            renderProductsTable(products);
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#5a5670;padding:30px;">Пользователей нет</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.email}</td>
+                    <td>${u.name || '-'}</td>
+                    <td>${u.balance || 0} ₽</td>
+                    <td>
+                        <span class="badge ${u.banned ? 'banned' : u.premium ? 'premium' : 'active'}">
+                            ${u.banned ? 'Забанен' : u.premium ? 'Премиум' : 'Активен'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="inline-btn blue" onclick="togglePremium('${u.email}')">
+                            ${u.premium ? 'Убрать прем' : 'Premium'}
+                        </button>
+                        <button class="inline-btn ${u.banned ? 'green' : 'red'}" onclick="toggleBan('${u.email}')">
+                            ${u.banned ? 'Разбанить' : 'Забанить'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderProductsTable(products) {
+            const tbody = document.getElementById('productsTableBody');
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#5a5670;padding:30px;">Товаров нет</td></tr>';
+                return;
+            }
+            tbody.innerHTML = products.map((p, i) => `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.price} ₽</td>
+                    <td>
+                        <button class="inline-btn red" onclick="removeProduct(${i})">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function togglePremium(email) {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.email === email);
+            if (idx === -1) return;
+            users[idx].premium = !users[idx].premium;
+            localStorage.setItem('users', JSON.stringify(users));
+            refreshAdminData();
+        }
+
+        function toggleBan(email) {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.email === email);
+            if (idx === -1) return;
+            users[idx].banned = !users[idx].banned;
+            localStorage.setItem('users', JSON.stringify(users));
+            refreshAdminData();
+        }
+
+        function addProduct() {
+            const name = document.getElementById('productName').value.trim();
+            const price = parseInt(document.getElementById('productPrice').value);
+            const status = document.getElementById('productStatus');
+
+            if (!name || price < 1) {
+                status.textContent = 'Заполните название и цену';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            products.push({ name, price });
+            localStorage.setItem('products', JSON.stringify(products));
+
+            document.getElementById('productName').value = '';
+            status.textContent = 'Товар добавлен: ' + name;
+            status.className = 'status-msg show success';
+            refreshAdminData();
+        }
+
+        function removeProduct(index) {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            products.splice(index, 1);
+            localStorage.setItem('products', JSON.stringify(products));
+            refreshAdminData();
+        }
+
+        function givePremium() {
+            const email = document.getElementById('premiumEmail').value.trim();
+            const days = parseInt(document.getElementById('premiumDays').value);
+            const status = document.getElementById('premiumStatus');
+
+            if (!email) {
+                status.textContent = 'Введите email';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.email === email);
+
+            if (idx === -1) {
+                status.textContent = 'Пользователь не найден';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            users[idx].premium = true;
+            users[idx].premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
+            localStorage.setItem('users', JSON.stringify(users));
+
+            status.textContent = email + ' получил премиум на ' + days + ' дней';
+            status.className = 'status-msg show success';
+            refreshAdminData();
+        }
+
+        function addBalance() {
+            const email = document.getElementById('balanceEmail').value.trim();
+            const amount = parseInt(document.getElementById('balanceAmount').value);
+            const status = document.getElementById('balanceStatus');
+
+            if (!email || amount < 1) {
+                status.textContent = 'Введите email и сумму';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.email === email);
+
+            if (idx === -1) {
+                status.textContent = 'Пользователь не найден';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            users[idx].balance = (users[idx].balance || 0) + amount;
+            localStorage.setItem('users', JSON.stringify(users));
+
+            status.textContent = email + ' получил ' + amount + ' ₽';
+            status.className = 'status-msg show success';
+            refreshAdminData();
+        }
+
+        function changeAdminPass() {
+            const oldPass = document.getElementById('oldAdminPass').value;
+            const newPass = document.getElementById('newAdminPass').value;
+            const status = document.getElementById('adminPassStatus');
+
+            if (oldPass !== adminPassword) {
+                status.textContent = 'Неверный старый пароль';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            if (newPass.length < 3) {
+                status.textContent = 'Минимум 3 символа';
+                status.className = 'status-msg show error';
+                return;
+            }
+
+            adminPassword = newPass;
+            localStorage.setItem(ADMIN_KEY, newPass);
+            status.textContent = 'Пароль изменён';
+            status.className = 'status-msg show success';
+            document.getElementById('oldAdminPass').value = '';
+            document.getElementById('newAdminPass').value = '';
+        }
+    </script>
+</body>
+</html>
